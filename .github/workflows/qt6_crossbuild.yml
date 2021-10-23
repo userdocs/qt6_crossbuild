@@ -1,0 +1,187 @@
+name: qt6+crossbuild+package+release
+on:
+  - workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [qt6]
+        os_id: [debian, ubuntu]
+        os_version_id: [buster, bullseye, focal, hirsute]
+        arch: [amd64, armhf, arm64]
+        include:
+          - arch: amd64
+            CHOST: "x86_64-linux-gnu"
+            docker_arch: amd64
+            docker_platform: linux/amd64
+          - arch: armhf
+            CHOST: "arm-linux-gnueabihf"
+            docker_arch: arm32v7
+            docker_platform: linux/arm/v7
+          - arch: arm64
+            CHOST: "aarch64-linux-gnu"
+            docker_arch: arm64v8
+            docker_platform: linux/arm64/v8
+        exclude:
+          - os_id: debian
+            os_version_id: focal
+          - os_id: debian
+            os_version_id: hirsute
+          - os_id: ubuntu
+            os_version_id: buster
+          - os_id: ubuntu
+            os_version_id: bullseye
+
+    name: ${{ matrix.os_id }}:${{ matrix.os_version_id }} ${{ matrix.name }} ${{ matrix.arch }}
+    env:
+      CHOST: "${{ matrix.CHOST }}"
+      CC: "${{ matrix.CHOST }}-gcc"
+      AR: "${{ matrix.CHOST }}-ar"
+      CXX: "${{ matrix.CHOST }}-g++"
+      qt6_short_version: "6.2"
+    steps:
+      - uses: actions/checkout@v2.3.4
+
+      - name: Host - Install host qemu-static
+        run: sudo apt-get install -y qemu binfmt-support qemu-user-static
+
+      - name: Host - Docker multiarch bootstrap
+        run: sudo docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      - name: Host - Create docker multiarch ${{ matrix.arch }} container
+        run: docker run --name multiarch -it -d -w /root -e 'PATH=/opt/cmake/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' -e 'LANG=en_US.UTF-8' -e 'DEBIAN_FRONTEND=noninteractive' -e CHOST=${{ env.CHOST }} -e CC=${{ env.CC }} -e AR=${{ env.AR }} -e CXX=${{ env.CXX }} -v ${{ github.workspace }}:/root ${{ matrix.os_id }}:${{ matrix.os_version_id }}
+
+      - name: Host - Create docker binary test ${{ matrix.arch }} container
+        run: docker run --name bintest -it -d -w /root -e 'LD_LIBRARY_PATH=/usr/local/lib:/usr/lib' -e 'LANG=en_US.UTF-8' -e 'DEBIAN_FRONTEND=noninteractive' --platform ${{ matrix.docker_platform }} -v ${{ github.workspace }}:/root ${{ matrix.docker_arch }}/${{ matrix.os_id }}:${{ matrix.os_version_id }}
+
+      - name: Docker target - fix Ubuntu sources
+        if: |
+          matrix.os_id == 'ubuntu' && matrix.arch != 'amd64'
+        run: |
+          docker exec -w /etc/apt/ multiarch  bash -c 'echo "deb [arch=${{ matrix.arch }}] http://ports.ubuntu.com/ubuntu-ports ${{ matrix.os_version_id }} main restricted universe multiverse" > sources.list'
+          docker exec -w /etc/apt/ multiarch  bash -c 'echo "deb [arch=${{ matrix.arch }}] http://ports.ubuntu.com/ubuntu-ports ${{ matrix.os_version_id }}-updates main restricted universe multiverse" >> sources.list'
+          docker exec -w /etc/apt/ multiarch  bash -c 'echo "deb [arch=${{ matrix.arch }}] http://ports.ubuntu.com/ubuntu-ports ${{ matrix.os_version_id }}-security main restricted universe multiverse" >> sources.list'
+          docker exec -w /etc/apt/ multiarch  bash -c 'echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ ${{ matrix.os_version_id }} main restricted universe multiverse" >> sources.list'
+          docker exec -w /etc/apt/ multiarch  bash -c 'echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ ${{ matrix.os_version_id }}-updates main restricted universe multiverse" >> sources.list'
+          docker exec -w /etc/apt/ multiarch  bash -c 'echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ ${{ matrix.os_version_id }}-backports restricted universe multiverse" >> sources.list'
+          docker exec -w /etc/apt/ multiarch  bash -c 'echo "deb [arch=amd64] http://security.ubuntu.com/ubuntu/ ${{ matrix.os_version_id }}-security main restricted universe multiverse" >> sources.list'
+
+      - name: Docker target - dpkg configure arch
+        run: docker exec multiarch dpkg --add-architecture ${{ matrix.arch }}
+
+      - name: Docker target - Run apt-get update
+        run: |
+          docker exec multiarch apt-get update
+          docker exec bintest apt-get update
+
+      - name: Docker target - Run apt-get upgrade
+        run: |
+          docker exec multiarch apt-get upgrade -y
+          docker exec bintest apt-get upgrade -y
+
+      - name: Docker target - apt-get install the core build dependencies
+        run: |
+          docker exec multiarch apt-get install -y build-essential curl pkg-config automake libtool git perl python3 python3-dev unzip
+          docker exec bintest apt-get install -y openssl
+
+      - name: Docker target - apt-get install cross target deps
+        run: docker exec multiarch apt-get install -y zlib1g-dev:${{ matrix.arch }} libssl-dev:${{ matrix.arch }} crossbuild-essential-${{ matrix.arch }} libstdc++-*-dev:${{ matrix.arch }}
+
+      - name: Docker target - cmake and ninja download and install
+        run: |
+          docker exec multiarch curl -sNL "https://github.com/userdocs/cmake_crossbuild/releases/latest/download/${{ matrix.os_id }}-${{ matrix.os_version_id }}-cmake-${{ matrix.arch }}.deb" -o ${{ matrix.os_id }}-${{ matrix.os_version_id }}-cmake-${{ matrix.arch }}.deb
+          docker exec multiarch dpkg -i ${{ matrix.os_id }}-${{ matrix.os_version_id }}-cmake-${{ matrix.arch }}.deb
+
+      - name: Docker target - qt6 get latest release info and set to env
+        run: |
+          qt_github_tag_list="$(git ls-remote -q -t --refs https://github.com/qt/qtbase.git | awk '{sub("refs/tags/", "");sub("(.*)(-[^0-9].*)(.*)", ""); print $2 }' | awk '!/^$/' | sort -rV)"
+          qt_github_tag="$(grep -Eom1 "v${{ env.qt6_short_version }}.([0-9]{1,2})" <<< "${qt_github_tag_list}")"
+          echo "qt6_version=${qt_github_tag/v/}" >> $GITHUB_ENV
+
+      - name: Docker target - qt6 set the download urls
+        run: |
+          echo "qt6_qtbase_url=https://download.qt.io/official_releases/qt/${{ env.qt6_short_version }}/${{ env.qt6_version }}/submodules/qtbase-everywhere-src-${{ env.qt6_version }}.tar.xz" >> $GITHUB_ENV
+          echo "qt6_qttools_url=https://download.qt.io/official_releases/qt/${{ env.qt6_short_version }}/${{ env.qt6_version }}/submodules/qttools-everywhere-src-${{ env.qt6_version }}.tar.xz" >> $GITHUB_ENV
+
+      - name: Docker target - qt qtbase - curl
+        run: |
+          docker exec multiarch curl -sNL ${{ env.qt6_qtbase_url }} -o qtbase.tar.xz
+          docker exec multiarch tar xf qtbase.tar.xz
+
+      - name: Docker target - qt qtbase - cmake configure
+        run: |
+          docker exec -w /root/qtbase-everywhere-src-${{ env.qt6_version }} multiarch cmake -Wno-dev -Wno-deprecated -G Ninja -B build \
+          -D QT_FEATURE_optimize_full=on \
+          -D QT_FEATURE_gui=OFF -D QT_FEATURE_widgets=OFF -D QT_FEATURE_dbus=OFF -D QT_FEATURE_openssl_linked=on -D QT_FEATURE_system_pcre2=off \
+          -D QT_FEATURE_testlib=off -D QT_BUILD_EXAMPLES=off -D QT_BUILD_TESTS=off \
+          -D CMAKE_BUILD_TYPE="release" \
+          -D CMAKE_CXX_STANDARD="17" \
+          -D CMAKE_PREFIX_PATH="" \
+          -D CMAKE_INSTALL_PREFIX="/root/build/opt/qt6"
+
+      - name: Docker target - qt qtbase - cmake build
+        run: docker exec -w /root/qtbase-everywhere-src-${{ env.qt6_version }} multiarch cmake --build build
+
+      - name: Docker target - qt qtbase - cmake install
+        run: docker exec -w /root/qtbase-everywhere-src-${{ env.qt6_version }} multiarch cmake --install build
+
+      - name: Docker target - qt qttools - curl
+        run: |
+          docker exec multiarch curl -sNL ${{ env.qt6_qttools_url }} -o qttools.tar.xz
+          docker exec multiarch tar xf qttools.tar.xz
+
+      - name: Docker target - qt qttools - cmake configure
+        run: |
+          docker exec -w /root/qttools-everywhere-src-${{ env.qt6_version }} multiarch cmake -Wno-dev -Wno-deprecated -G Ninja -B build \
+          -D CMAKE_BUILD_TYPE="release" \
+          -D CMAKE_CXX_STANDARD="17" \
+          -D CMAKE_PREFIX_PATH="/root/build/opt/qt6" \
+          -D CMAKE_INSTALL_PREFIX="/root/build/opt/qt6"
+
+      - name: Docker target - qt qttools - cmake build
+        run: docker exec -w /root/qttools-everywhere-src-${{ env.qt6_version }} multiarch cmake --build build
+
+      - name: Docker target - qt qttools - cmake install
+        run: docker exec -w /root/qttools-everywhere-src-${{ env.qt6_version }} multiarch cmake --install build
+
+      - name: Docker target - Set deb dependencies for qt6
+        run: echo "qt6-deb-deps=zlib1g,openssl" >> $GITHUB_ENV
+
+      - name: Docker target - ldconfig - create /etc/ld.so.conf.d/qt6.conf
+        run: |
+          docker exec -w /root/build multiarch mkdir -p etc/ld.so.conf.d
+          docker exec -w /root/build/etc/ld.so.conf.d multiarch bash -c "echo '/opt/qt6/lib' > qt6.conf"
+
+      - name: Host - Create deb packages
+        uses: jiro4989/build-deb-action@v2
+        with:
+          package: "${{ matrix.name }}"
+          package_root: build
+          maintainer: userdocs
+          version: "${{ env.qt6_version }}"
+          depends: "${{ env.qt6-deb-deps }}"
+          arch: "${{ matrix.arch }}"
+          desc: "${{ matrix.name }}-${{ matrix.arch }} for ${{ matrix.os_id }}-${{ matrix.os_version_id }}"
+
+      - name: Host - Remove version from release name and use hyphens
+        run: mv -f "${{ matrix.name }}_${{ env.qt6_version }}_${{ matrix.arch }}.deb" "${{ matrix.os_id }}-${{ matrix.os_version_id }}-${{ matrix.name }}-${{ matrix.arch }}.deb"
+
+      - name: Host - Upload artifacts
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          name: "${{ matrix.os_id }}-${{ matrix.os_version_id }}-${{ matrix.name }}-${{ env.qt6_version }}-${{ matrix.arch }}"
+          path: "${{ matrix.os_id }}-${{ matrix.os_version_id }}-${{ matrix.name }}-${{ matrix.arch }}.deb"
+
+      - name: Host - "Create release - tag - assets"
+        uses: ncipollo/release-action@v1
+        with:
+          prerelease: false
+          artifacts: "${{ matrix.os_id }}-${{ matrix.os_version_id }}-${{ matrix.name }}-${{ matrix.arch }}.deb"
+          replacesArtifacts: true
+          tag: "${{ env.qt6_version }}"
+          name: "qt6 ${{ env.qt6_version }}"
+          body: "qt6 built with cmake using the latest qt6 github release"
+          allowUpdates: true
+          token: "${{ secrets.GITHUB_TOKEN }}"
