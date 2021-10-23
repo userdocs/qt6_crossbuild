@@ -9,7 +9,7 @@ jobs:
       matrix:
         name: [qt6]
         os_id: [debian, ubuntu]
-        os_version_id: [buster, bullseye, focal, hirsute]
+        os_version_id: [buster, bullseye, bionic, focal, hirsute]
         arch: [amd64, armhf, arm64]
         include:
           - arch: amd64
@@ -25,6 +25,8 @@ jobs:
             docker_arch: arm64v8
             docker_platform: linux/arm64/v8
         exclude:
+          - os_id: debian
+            os_version_id: bionic
           - os_id: debian
             os_version_id: focal
           - os_id: debian
@@ -86,8 +88,12 @@ jobs:
           docker exec multiarch apt-get install -y build-essential curl pkg-config automake libtool git perl python3 python3-dev unzip
           docker exec bintest apt-get install -y openssl
 
+      - name: Docker target - apt-get install crossbuild-essential
+        if: matrix.arch != 'amd64'
+        run: docker exec multiarch apt-get install -y crossbuild-essential-${{ matrix.arch }}
+
       - name: Docker target - apt-get install cross target deps
-        run: docker exec multiarch apt-get install -y zlib1g-dev:${{ matrix.arch }} libssl-dev:${{ matrix.arch }} crossbuild-essential-${{ matrix.arch }} libstdc++-*-dev:${{ matrix.arch }}
+        run: docker exec multiarch apt-get install -y zlib1g-dev:${{ matrix.arch }} libssl-dev:${{ matrix.arch }} libstdc++-*-dev:${{ matrix.arch }}
 
       - name: Docker target - cmake and ninja download and install
         run: |
