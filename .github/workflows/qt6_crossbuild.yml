@@ -42,6 +42,8 @@ jobs:
       CXX: "${{ matrix.CHOST }}-g++"
       opt_dir_name: "opt/swizzin_apps"
       qt_short_version: "6.2"
+      cxx_standard: "17"
+      prerelease: false
 
     steps:
       - uses: actions/checkout@v2.3.4
@@ -151,7 +153,7 @@ jobs:
           -D QT_FEATURE_system_libjpeg=off -D QT_FEATURE_system_libpng=off -D QT_FEATURE_system_freetype=off \
           -D QT_FEATURE_testlib=off -D QT_BUILD_EXAMPLES=off -D QT_BUILD_TESTS=off \
           -D CMAKE_BUILD_TYPE="release" \
-          -D CMAKE_CXX_STANDARD="17" \
+          -D CMAKE_CXX_STANDARD="${{ env.cxx_standard }}" \
           -D CMAKE_PREFIX_PATH="/root/build/${{ env.opt_dir_name }}" \
           -D CMAKE_INSTALL_PREFIX="/root/build/${{ env.opt_dir_name }}"
 
@@ -170,7 +172,7 @@ jobs:
         run: |
           docker exec --env-file env.custom -w /root/qttools-everywhere-src-${{ env.qt_version }} multiarch cmake -Wno-dev -Wno-deprecated -G Ninja -B build \
           -D CMAKE_BUILD_TYPE="release" \
-          -D CMAKE_CXX_STANDARD="17" \
+          -D CMAKE_CXX_STANDARD="${{ env.cxx_standard }}" \
           -D CMAKE_PREFIX_PATH="/root/build/${{ env.opt_dir_name }}" \
           -D CMAKE_INSTALL_PREFIX="/root/build/${{ env.opt_dir_name }}"
 
@@ -211,7 +213,7 @@ jobs:
       - name: Host - "Create release - tag - assets"
         uses: ncipollo/release-action@v1
         with:
-          prerelease: false
+          prerelease: ${{ env.prerelease }}
           artifacts: "${{ matrix.os_id }}-${{ matrix.os_version_id }}-${{ matrix.name }}-${{ matrix.arch }}.deb"
           replacesArtifacts: true
           tag: "${{ env.qt_version }}"
