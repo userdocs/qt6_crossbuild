@@ -41,7 +41,7 @@ jobs:
       opt_dir_name: "opt/local"
       include_dir: "/opt/local/include"
       lib_dir: "/opt/local/lib"
-      qt_short_version: "6.2"
+      qt_short_version: "6.3"
       cxx_standard: "17"
       prerelease: false
 
