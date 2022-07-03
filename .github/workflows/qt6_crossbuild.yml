@@ -67,16 +67,16 @@ jobs:
       - name: Host - Create Docker template env file
         run: |
           echo "DEBIAN_FRONTEND=noninteractive" > env.custom
-          echo "LANG=en_US.UTF-8" >> env.custom
-          echo "LANGUAGE=en_US.UTF-8" >> env.custom
-          echo "LC_ALL=en_US.UTF-8" >> env.custom
-          echo "LC_MESSAGES=en_US.UTF-8" >> env.custom
-          echo "PATH=/${{ env.opt_dir_name }}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" >> env.custom
-          echo "LD_LIBRARY_PATH=/${{ env.opt_dir_name }}/lib:/usr/lib/${{ matrix.CHOST }}:/usr/lib:/usr/local/lib" >> env.custom
-          echo "CHOST=${{ matrix.CHOST }}" >> env.custom
-          echo "CC=${{ matrix.CHOST }}-gcc" >> env.custom
-          echo "AR=${{ matrix.CHOST }}-ar" >> env.custom
-          echo "CXX=${{ matrix.CHOST }}-g++" >> env.custom
+          echo "export LANG=en_US.UTF-8" >> env.custom
+          echo "export LANGUAGE=en_US.UTF-8" >> env.custom
+          echo "export LC_ALL=en_US.UTF-8" >> env.custom
+          echo "export LC_CTYPE=en_US.UTF-8" >> env.custom
+          echo "export PATH=/${{ env.opt_dir_name }}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" >> env.custom
+          echo "export LD_LIBRARY_PATH=/${{ env.opt_dir_name }}/lib:/usr/lib/${{ matrix.CHOST }}:/usr/lib:/usr/local/lib" >> env.custom
+          echo "export CHOST=${{ matrix.CHOST }}" >> env.custom
+          echo "export CC=${{ matrix.CHOST }}-gcc" >> env.custom
+          echo "export AR=${{ matrix.CHOST }}-ar" >> env.custom
+          echo "export CXX=${{ matrix.CHOST }}-g++" >> env.custom
 
       - name: Host - Create docker multiarch ${{ matrix.arch }} container
         run: docker run --name multiarch -it -d --env-file env.custom -w /root -v ${{ github.workspace }}:/root ${{ matrix.os_id }}:${{ matrix.os_version_id }}
