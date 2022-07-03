@@ -96,14 +96,6 @@ jobs:
           docker exec --env-file env.custom -w /etc/apt/ multiarch  bash -c 'echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ ${{ matrix.os_version_id }}-backports restricted universe multiverse" >> sources.list'
           docker exec --env-file env.custom -w /etc/apt/ multiarch  bash -c 'echo "deb [arch=amd64] http://security.ubuntu.com/ubuntu/ ${{ matrix.os_version_id }}-security main restricted universe multiverse" >> sources.list'
 
-      - name: Docker target - locales
-        run: |
-          docker exec --env-file env.custom multiarch /bin/bash -c 'echo LC_ALL=en_US.UTF-8 >> /etc/environment'
-          docker exec --env-file env.custom multiarch /bin/bash -c 'echo en_US.UTF-8 UTF-8 >> /etc/locale.gen'
-          docker exec --env-file env.custom multiarch /bin/bash -c 'echo LANG=en_US.UTF-8 > /etc/locale.conf'
-          docker exec --env-file env.custom multiarch locale-gen en_US.UTF-8
-          docker exec --env-file env.custom multiarch dpkg-reconfigure locales
-
       - name: Docker target - dpkg configure arch
         run: docker exec --env-file env.custom multiarch dpkg --add-architecture ${{ matrix.arch }}
 
@@ -143,6 +135,14 @@ jobs:
           echo "CC=${{ matrix.CHOST }}-gcc-8" >> env.custom
           echo "AR=${{ matrix.CHOST }}-gcc-ar-8" >> env.custom
           echo "CXX=${{ matrix.CHOST }}-g++-8" >> env.custom
+
+      - name: Docker target - locales
+        run: |
+          docker exec --env-file env.custom multiarch /bin/bash -c 'echo LC_ALL=en_US.UTF-8 >> /etc/environment'
+          docker exec --env-file env.custom multiarch /bin/bash -c 'echo en_US.UTF-8 UTF-8 >> /etc/locale.gen'
+          docker exec --env-file env.custom multiarch /bin/bash -c 'echo LANG=en_US.UTF-8 > /etc/locale.conf'
+          docker exec --env-file env.custom multiarch locale-gen en_US.UTF-8
+          docker exec --env-file env.custom multiarch dpkg-reconfigure locales
 
       - name: Docker target - cmake and ninja download and install
         run: |
