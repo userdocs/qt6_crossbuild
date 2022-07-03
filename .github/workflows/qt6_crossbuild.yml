@@ -111,7 +111,7 @@ jobs:
 
       - name: Docker target - apt-get install the core build dependencies
         run: |
-          docker exec --env-file env.custom multiarch apt-get install -y build-essential curl pkg-config automake libtool git perl python3 python3-dev unzip ccache
+          docker exec --env-file env.custom multiarch apt-get install -y build-essential curl pkg-config automake libtool git perl python3 python3-dev unzip ccache locales
           docker exec --env-file env.custom bintest apt-get install -y openssl binutils
 
       - name: Docker target - apt-get install crossbuild-essential
@@ -135,6 +135,11 @@ jobs:
           echo "CC=${{ matrix.CHOST }}-gcc-8" >> env.custom
           echo "AR=${{ matrix.CHOST }}-gcc-ar-8" >> env.custom
           echo "CXX=${{ matrix.CHOST }}-g++-8" >> env.custom
+
+      - name: Docker target - locales
+        run: |
+          docker exec --env-file env.custom multiarch locale-gen en_US.UTF-8
+          docker exec --env-file env.custom multiarch dpkg-reconfigure locales
 
       - name: Docker target - cmake and ninja download and install
         run: |
