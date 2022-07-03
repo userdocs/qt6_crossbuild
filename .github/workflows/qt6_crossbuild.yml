@@ -133,7 +133,7 @@ jobs:
       - name: Docker target - apt-get install cross target deps
         run: docker exec --env-file env.custom multiarch apt-get install -y openssl:${{ matrix.arch }} re2c:${{ matrix.arch }} libstdc++-*-dev:${{ matrix.arch }}
 
-      - name: Docker target - apt-get install cross target deps
+      - name: Docker target - apt-get install cross target deps - no bionic or buster
         if: matrix.os_version_id != 'bionic' && matrix.os_version_id != 'buster'
         run: docker exec --env-file env.custom multiarch apt-get install -y libdouble-conversion3:${{ matrix.arch }} libdouble-conversion-dev:${{ matrix.arch }}
 
