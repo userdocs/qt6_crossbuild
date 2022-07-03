@@ -138,13 +138,15 @@ jobs:
 
       - name: Docker target - locales
         run: |
-          docker exec --env-file env.custom multiarch /bin/bash -c 'echo en_US UTF-8 >> /etc/locale.gen'
+          docker exec --env-file env.custom multiarch /bin/bash -c 'echo LC_ALL=en_US.UTF-8 >> /etc/environment'
+          docker exec --env-file env.custom multiarch /bin/bash -c 'echo en_US.UTF-8 UTF-8 >> /etc/locale.gen'
+          docker exec --env-file env.custom multiarch /bin/bash -c 'echo LANG=en_US.UTF-8 > /etc/locale.conf'
           docker exec --env-file env.custom multiarch locale-gen en_US.UTF-8
           docker exec --env-file env.custom multiarch dpkg-reconfigure locales
 
       - name: Docker target - cmake and ninja download and install
         run: |
-          docker exec --env-file env.custom multiarch curl -sNL "https://github.com/userdocs/cmake-crossbuild/releases/download/3.24.20220627_1.11.0/${{ matrix.os_id }}-${{ matrix.os_version_id }}-cmake-${{ matrix.arch }}.deb" -o ${{ matrix.os_id }}-${{ matrix.os_version_id }}-cmake-${{ matrix.arch }}.deb
+          docker exec --env-file env.custom multiarch curl -sNL "https://github.com/userdocs/cmake-crossbuild/releases/download/3.24.20220628_1.11.0/${{ matrix.os_id }}-${{ matrix.os_version_id }}-cmake-${{ matrix.arch }}.deb" -o ${{ matrix.os_id }}-${{ matrix.os_version_id }}-cmake-${{ matrix.arch }}.deb
           docker exec --env-file env.custom multiarch dpkg -i ${{ matrix.os_id }}-${{ matrix.os_version_id }}-cmake-${{ matrix.arch }}.deb
 
       - name: Docker target - zlib-ng download and install
