@@ -194,6 +194,13 @@ jobs:
           -D CMAKE_CXX_STANDARD="${{ env.cxx_standard }}" \
           -D CMAKE_PREFIX_PATH="/${{ env.opt_dir_name }}" \
           -D CMAKE_INSTALL_PREFIX="/root/build/${{ env.opt_dir_name }}"
+        continue-on-error: true
+
+      - name: Archive logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.name }}-graphs
+          path: ${{ env.build_dir }}/logs/*.txt
 
       - name: Docker target - qt qtbase - cmake build
         run: docker exec --env-file env.custom -w /root/qtbase-everywhere-src-${{ env.qt_version }} multiarch cmake --build build
@@ -253,9 +260,3 @@ jobs:
           body: "Built with cmake using v${{ env.qt_version }} from github on amd64 arm64 armhf for Debian Buster Bullseye and Ubuntu bionic Focal"
           allowUpdates: true
           token: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Archive logs
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ env.name }}-graphs
-          path: ${{ env.build_dir }}/logs/*.txt
