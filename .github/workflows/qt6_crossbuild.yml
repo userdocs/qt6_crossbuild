@@ -2,7 +2,7 @@ name: qt6+crossbuild+package+release
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 04 * * *"
+    - cron: "30 01 * * *"
 
 jobs:
   build:
