@@ -199,8 +199,8 @@ jobs:
       - name: Archive logs
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.name }}-graphs
-          path: ${{ env.build_dir }}/logs/*.txt
+          name: ${{ env.qt_version }}-logs
+          path: /root/qtbase-everywhere-src-${{ env.qt_version }}/build/CMakeFiles/*.log
 
       - name: Docker target - qt qtbase - cmake build
         run: docker exec --env-file env.custom -w /root/qtbase-everywhere-src-${{ env.qt_version }} multiarch cmake --build build
