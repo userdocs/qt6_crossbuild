@@ -84,7 +84,7 @@ jobs:
       - name: Host - Create docker binary test ${{ matrix.arch }} container
         run: docker run --name bintest -it -d --env-file env.custom -w /root --platform ${{ matrix.docker_platform }} -v ${{ github.workspace }}:/root ${{ matrix.docker_arch }}/${{ matrix.os_id }}:${{ matrix.os_version_id }}
 
-      - name: Docker target - set locale data
+      - name: Docker target - Set locale data
         run: |
           docker exec --env-file env.custom multiarch /bin/bash -c 'echo LC_ALL=en_US.UTF-8 >> /etc/environment'
           docker exec --env-file env.custom multiarch /bin/bash -c 'echo en_US.UTF-8 UTF-8 >> /etc/locale.gen'
@@ -253,3 +253,9 @@ jobs:
           body: "Built with cmake using v${{ env.qt_version }} from github on amd64 arm64 armhf for Debian Buster Bullseye and Ubuntu bionic Focal"
           allowUpdates: true
           token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Archive logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.name }}-graphs
+          path: ${{ env.build_dir }}/logs/*.txt
