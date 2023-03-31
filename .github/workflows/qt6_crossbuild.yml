@@ -151,7 +151,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.arch }}-${{ matrix.os_id }}-${{ matrix.os_codename }}-${{ matrix.name }}-cmake-logs
-          path: qtbase-everywhere-src-${{ env.qt_version }}/build/CMakeFiles/*.log
+          path: qtbase-everywhere-src-${{ env.qt_version }}/build/
 
       - name: Docker - qt qtbase - cmake build
         run: docker exec -w /home/github/qtbase-everywhere-src-${{ env.qt_version }} multiarch cmake --build build
