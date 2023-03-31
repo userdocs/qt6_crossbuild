@@ -130,7 +130,7 @@ jobs:
 
       - name: Docker - qt qtbase - cmake configure
         run: |
-          docker exec -w /root/qtbase-everywhere-src-${{ env.qt_version }} multiarch cmake -Wno-dev -Wno-deprecated -G Ninja -B build \
+          docker exec -w /home/github/qtbase-everywhere-src-${{ env.qt_version }} multiarch cmake -Wno-dev -Wno-deprecated -G Ninja -B build \
           -D CMAKE_BUILD_TYPE="release" \
           -D QT_FEATURE_optimize_full=on \
           -D QT_FEATURE_gui=off -D QT_FEATURE_openssl_linked=on -D QT_FEATURE_dbus=off \
@@ -144,7 +144,7 @@ jobs:
           -D CMAKE_CXX_STANDARD_REQUIRED=ON \
           -D CMAKE_CXX_EXTENSIONS=OFF \
           -D CMAKE_PREFIX_PATH="/${{ env.opt_dir_name }}" \
-          -D CMAKE_INSTALL_PREFIX="/root/build/${{ env.opt_dir_name }}"
+          -D CMAKE_INSTALL_PREFIX="/home/github/build/${{ env.opt_dir_name }}"
         continue-on-error: true
 
       - name: Archive logs
@@ -154,10 +154,10 @@ jobs:
           path: qtbase-everywhere-src-${{ env.qt_version }}/build/CMakeFiles/*.log
 
       - name: Docker - qt qtbase - cmake build
-        run: docker exec -w /root/qtbase-everywhere-src-${{ env.qt_version }} multiarch cmake --build build
+        run: docker exec -w /home/github/qtbase-everywhere-src-${{ env.qt_version }} multiarch cmake --build build
 
       - name: Docker - qt qtbase - cmake install
-        run: docker exec -w /root/qtbase-everywhere-src-${{ env.qt_version }} multiarch cmake --install build
+        run: docker exec -w /home/github/qtbase-everywhere-src-${{ env.qt_version }} multiarch cmake --install build
 
       - name: Docker - qt qttools - curl
         run: |
@@ -166,30 +166,30 @@ jobs:
 
       - name: Docker - qt qttools - cmake configure
         run: |
-          docker exec -w /root/qttools-everywhere-src-${{ env.qt_version }} multiarch cmake -Wno-dev -Wno-deprecated -G Ninja -B build \
+          docker exec -w /home/github/qttools-everywhere-src-${{ env.qt_version }} multiarch cmake -Wno-dev -Wno-deprecated -G Ninja -B build \
           -D CMAKE_BUILD_TYPE="release" \
           -D CMAKE_CXX_STANDARD="${{ env.cxx_standard }}" \
           -D CMAKE_CXX_STANDARD_REQUIRED=ON \
           -D CMAKE_CXX_EXTENSIONS=OFF \
           -D CMAKE_PREFIX_PATH="/${{ env.opt_dir_name }}" \
-          -D CMAKE_INSTALL_PREFIX="/root/build/${{ env.opt_dir_name }}"
+          -D CMAKE_INSTALL_PREFIX="/home/github/build/${{ env.opt_dir_name }}"
 
       - name: Docker - qt qttools - cmake build
-        run: docker exec -w /root/qttools-everywhere-src-${{ env.qt_version }} multiarch cmake --build build
+        run: docker exec -w /home/github/qttools-everywhere-src-${{ env.qt_version }} multiarch cmake --build build
 
       - name: Docker - qt qttools - cmake install
-        run: docker exec -w /root/qttools-everywhere-src-${{ env.qt_version }} multiarch cmake --install build
+        run: docker exec -w /home/github/qttools-everywhere-src-${{ env.qt_version }} multiarch cmake --install build
 
       - name: Docker - Set deb dependencies for qt
         run: echo "qt-deb-deps=zlib-ng,openssl" >> $GITHUB_ENV
 
       - name: Docker - ldconfig - create /etc/ld.so.conf.d/qt6.conf
         run: |
-          docker exec -w /root/build multiarch mkdir -p DEBIAN
-          docker exec -w /root/build/DEBIAN multiarch bash -c "echo -e '#!/usr/bin/env bash\nldconfig' > postinst"
-          docker exec -w /root/build/DEBIAN multiarch bash -c "chmod +x postinst"
-          docker exec -w /root/build multiarch mkdir -p etc/ld.so.conf.d
-          docker exec -w /root/build/etc/ld.so.conf.d multiarch bash -c "echo '/${{ env.opt_dir_name }}/lib' > qt6.conf"
+          docker exec -w /home/github/build multiarch mkdir -p DEBIAN
+          docker exec -w /home/github/build/DEBIAN multiarch bash -c "echo -e '#!/usr/bin/env bash\nldconfig' > postinst"
+          docker exec -w /home/github/build/DEBIAN multiarch bash -c "chmod +x postinst"
+          docker exec -w /home/github/build multiarch mkdir -p etc/ld.so.conf.d
+          docker exec -w /home/github/build/etc/ld.so.conf.d multiarch bash -c "echo '/${{ env.opt_dir_name }}/lib' > qt6.conf"
 
       - name: Host - Create deb packages
         uses: jiro4989/build-deb-action@v2
