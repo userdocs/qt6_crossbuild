@@ -109,15 +109,19 @@ jobs:
           docker exec multiarch curl -sNL "https://github.com/userdocs/openssl-crossbuild/releases/latest/download/${{ matrix.os_id }}-${{ matrix.os_codename }}-openssl-${{ matrix.arch }}.deb" -o ${{ matrix.os_id }}-${{ matrix.os_codename }}-openssl-${{ matrix.arch }}.deb
           docker exec multiarch sudo dpkg -i ${{ matrix.os_id }}-${{ matrix.os_codename }}-openssl-${{ matrix.arch }}.deb
 
-      - name: Docker - qt get latest release info and set to env
+      - name: Host - qt get latest release info and create env and urls
         run: |
-          qt_github_tag_list="$(git ls-remote -q -t --refs https://github.com/qt/qtbase.git | awk '/'"${qt_short_version}"'/{sub("refs/tags/", "");sub("(.*)(-[^0-9].*)(.*)", ""); print $2 }' | awk '!/^$/' | sort -rV | head -n 1)"
-          echo "qt_version=${qt_github_tag/v/}" >> $GITHUB_ENV
+          qt_github_tag="$(git ls-remote -q -t --refs https://github.com/qt/qtbase.git | awk '/'"${qt_short_version}"'/{sub("refs/tags/v", "");sub("(.*)(-[^0-9].*)(.*)", ""); print $2 }' | awk '!/^$/' | sort -rV | head -n 1)"
+          qt_version=${qt_github_tag}
 
-      - name: Docker - qt set the download urls
-        run: |
-          echo "qt_qtbase_url=https://download.qt.io/official_releases/qt/${{ env.qt_short_version }}/${{ env.qt_version }}/submodules/qtbase-everywhere-src-${{ env.qt_version }}.tar.xz" >> $GITHUB_ENV
-          echo "qt_qttools_url=https://download.qt.io/official_releases/qt/${{ env.qt_short_version }}/${{ env.qt_version }}/submodules/qttools-everywhere-src-${{ env.qt_version }}.tar.xz" >> $GITHUB_ENV
+          read -ra qt_version_short_array <<< "${qt_version[qtbase]//\./ }"
+          qt_short_version="${qt_version_short_array[0]}.${qt_version_short_array[1]}"
+
+          echo "qt_qtbase_url=https://download.qt.io/official_releases/qt/${qt_short_version}/${qt_version}/submodules/qtbase-everywhere-src-${qt_version}.tar.xz" >> $GITHUB_ENV
+          echo "qt_qttools_url=https://download.qt.io/official_releases/qt/${qt_short_version}/${qt_version}/submodules/qttools-everywhere-src-${qt_version}.tar.xz" >> $GITHUB_ENV
+
+          echo "qt_short_version=${qt_short_version}" >> $GITHUB_ENV
+          echo "qt_version=${qt_version}" >> $GITHUB_ENV
 
       - name: Host - qt qtbase - curl
         run: |
