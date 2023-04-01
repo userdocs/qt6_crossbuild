@@ -6,7 +6,7 @@ on:
       skip_rerun:
         description: "Skip rerun?"
         required: true
-        type: boolean#
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
