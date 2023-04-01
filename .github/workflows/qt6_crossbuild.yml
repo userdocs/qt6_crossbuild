@@ -196,7 +196,7 @@ jobs:
           double_conversion="$(docker exec multiarch apt-cache search --names-only libdouble-conversion[0-9]$ | sort -r | head -n1 | awk '{print $1}')"
 
           if [[ ${{ matrix.os_codename }} =~ ^(bullseye|jammy)$ ]]; then
-            md4c_html="$(docker exec multiarch apt-cache search --names-only libmd4c-html0$ | sort -r | head -n1)"
+            md4c_html="$(docker exec multiarch apt-cache search --names-only libmd4c-html0$ | sort -r | head -n1 | awk '{print $1}')"
             echo "qt-deb-deps=zlib-ng,openssl,libgeoip1,${icu},${double_conversion},${md4c_html}" >> $GITHUB_ENV
           else
             echo "qt-deb-deps=zlib-ng,openssl,libgeoip1,${icu},${double_conversion}" >> $GITHUB_ENV
