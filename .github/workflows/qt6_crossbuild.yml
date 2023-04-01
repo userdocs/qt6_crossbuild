@@ -7,6 +7,12 @@ on:
         description: "Skip rerun?"
         required: true
         type: boolean
+      retries:
+        description: 'Number of rerun retries'
+        required: true
+        default: '5'
+        type: choice
+        options: [ "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -153,6 +159,7 @@ jobs:
         continue-on-error: true
 
       - name: Archive logs
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.arch }}-${{ matrix.os_id }}-${{ matrix.os_codename }}-${{ matrix.name }}-cmake-logs
@@ -184,7 +191,16 @@ jobs:
         run: docker exec -w /home/github/qttools-everywhere-src-${{ env.qt_version }} multiarch cmake --install build
 
       - name: Docker - Set deb dependencies for qt
-        run: echo "qt-deb-deps=zlib-ng,openssl" >> $GITHUB_ENV
+        run: |
+          icu="$(docker exec multiarch apt-cache search --names-only libicu[0-9]+$ | sort -r | head -n1 | awk '{print $1}')"
+          double_conversion="$(docker exec multiarch apt-cache search --names-only libdouble-conversion[0-9]$ | sort -r | head -n1 | awk '{print $1}')"
+
+          if [[ ${{ matrix.os_codename }} =~ ^(bullseye|jammy)$ ]]; then
+            md4c_html="$(docker exec multiarch apt-cache search --names-only libmd4c-html0$ | sort -r | head -n1)"
+            echo "qt-deb-deps=zlib-ng,openssl,libgeoip1,${icu},${double_conversion},${md4c_html}" >> $GITHUB_ENV
+          else
+            echo "qt-deb-deps=zlib-ng,openssl,libgeoip1,${icu},${double_conversion}" >> $GITHUB_ENV
+          fi
 
       - name: Docker - ldconfig - create /etc/ld.so.conf.d/qt6.conf
         run: |
@@ -265,4 +281,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Trigger rerun workflow on job failures
-        run: gh workflow run rerun.yml -f run_id=${{ github.run_id }} -f attempts=${{ github.run_attempt }}
+        run: gh workflow run rerun.yml -f run_id=${{ github.run_id }} -f attempts=${{ github.run_attempt }} -f retries=${{ inputs.retries }}
