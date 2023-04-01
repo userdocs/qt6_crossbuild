@@ -148,8 +148,6 @@ jobs:
           -D QT_FEATURE_gui=OFF -D QT_FEATURE_widgets=OFF -D QT_FEATURE_dbus=OFF -D QT_FEATURE_openssl_linked=on \
           -D QT_FEATURE_system_pcre2=off -D QT_FEATURE_system_harfbuzz=off -D QT_FEATURE_system_freetype=off \
           -D CMAKE_CXX_STANDARD="${{ env.cxx_standard }}" \
-          -D CMAKE_CXX_STANDARD_REQUIRED=ON \
-          -D CMAKE_CXX_EXTENSIONS=OFF \
           -D CMAKE_PREFIX_PATH="/${{ env.opt_dir_name }}" \
           -D CMAKE_INSTALL_PREFIX="/home/github/build/${{ env.opt_dir_name }}"
         continue-on-error: true
@@ -176,8 +174,6 @@ jobs:
           docker exec -w /home/github/qttools-everywhere-src-${{ env.qt_version }} multiarch cmake -Wno-dev -Wno-deprecated -G Ninja -B build \
           -D CMAKE_BUILD_TYPE="release" \
           -D CMAKE_CXX_STANDARD="${{ env.cxx_standard }}" \
-          -D CMAKE_CXX_STANDARD_REQUIRED=ON \
-          -D CMAKE_CXX_EXTENSIONS=OFF \
           -D CMAKE_PREFIX_PATH="/${{ env.opt_dir_name }}" \
           -D CMAKE_INSTALL_PREFIX="/home/github/build/${{ env.opt_dir_name }}"
 
