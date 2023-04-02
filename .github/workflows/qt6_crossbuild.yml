@@ -116,12 +116,12 @@ jobs:
           read -ra qt_version_short_array <<< "${qt_version//\./ }"
           qt_short_version="${qt_version_short_array[0]}.${qt_version_short_array[1]}"
 
-          printf '%s' "qt_qtbase_url=https://download.qt.io/official_releases/qt/${qt_short_version}/${qt_version}/submodules/qtbase-everywhere-src-${qt_version}.tar.xz" >> $GITHUB_ENV
-          printf '%s' "qt_qttools_url=https://download.qt.io/official_releases/qt/${qt_short_version}/${qt_version}/submodules/qttools-everywhere-src-${qt_version}.tar.xz" >> $GITHUB_ENV
+          printf '%s\n' "qt_qtbase_url=https://download.qt.io/official_releases/qt/${qt_short_version}/${qt_version}/submodules/qtbase-everywhere-src-${qt_version}.tar.xz" >> $GITHUB_ENV
+          printf '%s\n' "qt_qttools_url=https://download.qt.io/official_releases/qt/${qt_short_version}/${qt_version}/submodules/qttools-everywhere-src-${qt_version}.tar.xz" >> $GITHUB_ENV
 
-          printf '%s' "qt_short_version=${qt_short_version}" >> $GITHUB_ENV
-          printf '%s' "qt_version=${qt_version}" >> $GITHUB_ENV
-          printf '%s' "qt_version=${{ env.qt_version }}" >> $GITHUB_OUTPUT
+          printf '%s\n' "qt_short_version=${qt_short_version}" >> $GITHUB_ENV
+          printf '%s\n' "qt_version=${qt_version}" >> $GITHUB_ENV
+          printf '%s\n' "qt_version=${{ env.qt_version }}" >> $GITHUB_OUTPUT
 
       - name: Host - qt qtbase - curl
         run: curl -sNL ${{ env.qt_qtbase_url }} -o qtbase.tar.xz && tar xf qtbase.tar.xz
@@ -181,9 +181,9 @@ jobs:
 
           if [[ ${{ matrix.os_codename }} =~ ^(bullseye|jammy)$ ]]; then
             md4c_html="$(docker exec multiarch apt-cache search --names-only libmd4c-html0$ | sort -r | head -n1 | awk '{print $1}')"
-            printf '%s' "qt-deb-deps=zlib-ng,openssl,${icu},${double_conversion},${md4c_html}" >> $GITHUB_ENV
+            printf '%s\n' "qt-deb-deps=zlib-ng,openssl,${icu},${double_conversion},${md4c_html}" >> $GITHUB_ENV
           else
-            printf '%s' "qt-deb-deps=zlib-ng,openssl,${icu},${double_conversion}" >> $GITHUB_ENV
+            printf '%s\n' "qt-deb-deps=zlib-ng,openssl,${icu},${double_conversion}" >> $GITHUB_ENV
           fi
 
       - name: Docker - ldconfig - create /etc/ld.so.conf.d/qt6.conf
