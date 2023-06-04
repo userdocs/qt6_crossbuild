@@ -133,6 +133,7 @@ jobs:
           docker exec -w /home/github/qtbase-everywhere-src-${{ env.qt_version }} multiarch cmake -Wno-dev -Wno-deprecated -G Ninja -B build
           -D CMAKE_BUILD_TYPE="release"
           -D CMAKE_CXX_FLAGS="-lstdc++fs"
+          -D CMAKE_EXE_LINKER_FLAGS="-lstdc++fs"
           -D QT_FEATURE_optimize_full=on
           -D FEATURE_glib=OFF
           -D QT_FEATURE_gui=off -D QT_FEATURE_openssl_linked=on -D QT_FEATURE_dbus=off
