@@ -6,13 +6,14 @@ on:
       skip_rerun:
         description: "Skip rerun?"
         required: true
+        default: true
         type: boolean
       retries:
-        description: 'Number of rerun retries'
+        description: "Number of rerun retries"
         required: true
-        default: '5'
+        default: "1"
         type: choice
-        options: [ "1", "2", "3", "4", "5", "6", "7", "8", "9" ]
+        options: ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -31,13 +32,15 @@ jobs:
       matrix:
         name: [qt6]
         os_id: [debian, ubuntu]
-        os_codename: [bullseye, bookworm, focal, jammy]
+        os_codename: [bullseye, bookworm, focal, jammy, noble]
         arch: [amd64, armhf, arm64]
         exclude:
           - os_id: debian
             os_codename: focal
           - os_id: debian
             os_codename: jammy
+          - os_id: debian
+            os_codename: noble
           - os_id: ubuntu
             os_codename: bullseye
           - os_id: ubuntu
@@ -245,7 +248,7 @@ jobs:
           replacesArtifacts: true
           tag: "${{ env.qt_version }}"
           name: "qt ${{ env.qt_version }}"
-          body: "Built with cmake using v${{ env.qt_version }} from github on amd64 arm64 armhf for Debian Buster Bullseye and Ubuntu bionic Focal Jammy"
+          body: "Built with cmake using v${{ env.qt_version }} from github on amd64 arm64 armhf for Debian Bullseye Bookworm and Ubuntu Focal Jammy Noble"
           allowUpdates: true
 
   rerun-on-failure:
@@ -256,10 +259,10 @@ jobs:
       actions: write
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      GH_TOKEN: "${{ github.TOKEN }}"
     steps:
       - uses: actions/checkout@v4
       - name: Trigger rerun workflow on job failures
         run: |
-          inputs_value="${{ inputs.retries }}"
-          gh workflow run rerun.yml -f run_id=${{ github.run_id }} -f attempts=${{ github.run_attempt }} -f retries=${inputs_value:-3}
+          inputs_retries="${{ inputs.retries }}"
+          gh workflow run rerun.yml -f run_id=${{ github.run_id }} -f attempts=${{ github.run_attempt }} -f retries=${inputs_retries:-1}
