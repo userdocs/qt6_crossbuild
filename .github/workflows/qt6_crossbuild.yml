@@ -155,9 +155,9 @@ jobs:
 
           if [[ ${{ matrix.os_codename }} =~ ^(bullseye|jammy)$ ]]; then
             md4c_html="$(docker exec multiarch apt-cache search --names-only libmd4c-html0$ | sort -r | head -n1 | awk '{print $1}')"
-            printf '%s\n' "zlib-ng,openssl,${icu},${double_conversion},${md4c_html}" >> $GITHUB_ENV
+            printf '%s\n' "qt_deb_deps=zlib-ng,openssl,${icu},${double_conversion},${md4c_html}" >> $GITHUB_ENV
           else
-            printf '%s\n' "zlib-ng,openssl,${icu},${double_conversion}" >> $GITHUB_ENV
+            printf '%s\n' "qt_deb_deps=zlib-ng,openssl,${icu},${double_conversion}" >> $GITHUB_ENV
           fi
 
       - name: Docker - ldconfig - create /etc/ld.so.conf.d/qt6.conf
@@ -176,7 +176,7 @@ jobs:
           maintainer: userdocs
           compress_type: gzip
           version: "${{ env.qt_version }}"
-          depends: "${{ env.qt-deb-deps }}"
+          depends: "${{ env.qt_deb_deps }}"
           arch: "${{ matrix.arch }}"
           desc: "${{ matrix.name }}-${{ matrix.arch }} for ${{ matrix.os_id }}-${{ matrix.os_codename }}"
 
