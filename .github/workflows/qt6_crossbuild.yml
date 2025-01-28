@@ -24,6 +24,8 @@ permissions: {}
 jobs:
   build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     outputs:
       qt_version: ${{ steps.version_info.outputs.qt_version }}
     strategy:
@@ -192,6 +194,8 @@ jobs:
   release:
     name: Upload artifacts to release
     runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: write
     needs: [build]
     if: needs.build.result == 'success'
     env:
